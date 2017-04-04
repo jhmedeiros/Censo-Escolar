@@ -1,0 +1,56 @@
+library(bit64)
+library(data.table)
+
+## 21.041.407 x 57 em 2010
+## 21.214.170 x 61 em 2011
+## 21.247.121 x 73 em 2012
+## 21.474.135 x 85 em 2013
+## 21.481.476 x 85 em 2014
+## 21.026.814 x 93 em 2015
+## 20.741.767 x 93 em 2016
+
+setwd("D:/Users/joao.medeiros/Documents/Censo Escolar")
+
+nrow(fread("MATRICULA_SUDESTE.csv", select = 1L))
+
+b2 = data.frame()
+
+for(i in 0:21){
+        
+        if (i == 0) {
+                
+                n = (i*1000000)
+                a1 <- fread("MATRICULA_SUDESTE.csv", nrows = 1000000, skip = n, sep = "|")
+                colnames <- colnames(a1)
+                b1 <- a1[a1$COD_MUNICIPIO_ESCOLA == 3106200, ]
+                b2 <- rbind(b2, b1)
+
+                
+        }
+        
+        else if (i > 0 & i < 21) {
+            
+                n = (i*1000000)
+                a2 <- fread("MATRICULA_SUDESTE.csv", nrows = 1000000, skip = n, sep = "|")
+                colnames(a2) <- colnames
+                b1 <- a2[a2$COD_MUNICIPIO_ESCOLA == 3106200, ]
+                b2 <- rbind(b2, b1)
+                print(i)
+                
+        }
+        
+        else if (i == 21) {
+                
+                n = (i*1000000)
+                a2 <- fread("MATRICULA_SUDESTE.csv", nrows = 41407, skip = n, sep = "|")
+                colnames(a2) <- colnames
+                b1 <- a2[a2$COD_MUNICIPIO_ESCOLA == 3106200, ]
+                b2 <- rbind(b2, b1)
+                print(i)
+                rm(a1, a2, b1, colnames, i, n)
+                
+        }
+        
+}
+
+write.csv(b2, file = "Matriculas.BH.CE.2010.csv")
