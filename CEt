@@ -1,0 +1,555 @@
+setwd("D:/Users/joao.medeiros/Documents/Censo Escolar")
+library(superheat)
+library(reshape2)
+
+#x2016 <- read.csv2.ffdf(file = "MATRICULA_SUDESTE.csv", 
+#sep = "|", 
+#first.rows = 100000,
+#VERBOSE = TRUE)
+
+#save.ffdf(x2016, dir="./x2016")
+#load.ffdf(dir="./x2016")
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2015       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2015.bh <- read.csv(file = "Matriculas.BH.CE.2015.csv", row.names = 1)
+#b2015.bh <- a2015.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################        NAs       ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2015.bh$TP_ETAPA_ENSINO))
+na <- a2015.bh[is.na(a2015.bh$TP_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################      Filtros     ##############################
+########################                  #############################
+######################################################################
+
+
+a2015.bh$TP_ETAPA_ENSINO_FAC <- factor(a2015.bh$TP_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+a2015.bh$TP_ETAPA_AGREGADA_FAC <- factor(a2015.bh$TP_ETAPA_AGREGADA, 
+                                         levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9), 
+                                         labels = c("Ed. Infantil", "AIs Ens. Fundamental", "AFs Ens. Fundamental", "Ens. Médio Prop.", "Ens. Médio Normal", "Cur. Téc. Int.", "Ed. Profissional", "EJA Ens. Fundamental", "EJA Ens. Médio"))
+
+a2015.bh$TP_DEPENDENCIA_FAC <- factor(a2015.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+a2015.bh %>%
+        filter(NU_IDADE < 10) %>%
+        group_by(NU_IDADE) %>%
+        summarise(n())
+
+a2015.bh %>%
+        filter(NU_IDADE < 10) %>%
+        group_by(NU_IDADE, TP_ETAPA_ENSINO_FAC) %>%
+        summarise(n())
+
+a2015.bh %>%
+        group_by(TP_ETAPA_AGREGADA) %>%
+        summarise(n())
+
+a2015.bh %>%
+        group_by(TP_DEPENDENCIA) %>%
+        summarise(n())
+
+a2015.bh %>%
+        filter(TP_ETAPA_ENSINO == 1 | TP_ETAPA_ENSINO == 2) %>%
+        group_by(TP_CATEGORIA_ESCOLA_PRIVADA) %>%
+        summarise(n(), n()/598651)
+
+a2015.bh %>%
+        filter(TP_ETAPA_AGREGADA == 1) %>%
+        group_by(NU_IDADE_REFERENCIA) %>%
+        summarise("Nº" = n(),
+                  "% do Total " = percent(n()/598651),
+                  "% da Etapa" = percent(n()/86282))
+
+b2015.bh <- a2015.bh %>% filter(TP_ETAPA_AGREGADA == 1)
+write.csv(b2015.bh, file = "Matriculas.EdInf.BH.CE.2015.csv")
+
+######################################################################
+########################                  #############################
+########################  Melhor Gráfico  ##############################
+########################                  #############################
+######################################################################
+
+
+q <- data.matrix(table(a2015.bh$TP_ETAPA_AGREGADA_FAC, a2015.bh$NU_IDADE_REFERENCIA))
+q[q == 0] <- NA
+
+c <- a2015.bh %>% group_by(TP_ETAPA_AGREGADA_FAC) %>% summarise(n())
+c <- c$'n()'
+c <- c[-10]
+
+d <- a2015.bh %>% group_by(NU_IDADE_REFERENCIA) %>% summarise(n())
+d <- d$'n()'
+
+superheat(q,
+          heat.col.scheme =  "red",
+          heat.na.col = "white",
+          grid.vline.col = "black",
+          grid.hline.col = "black",
+          bottom.label.text.angle = 90,
+          scale = FALSE,
+          
+          left.label.text.size = 4,
+          left.label.size = 0.21,
+          bottom.label.text.size = 4,
+          bottom.label.size = 0.1,
+          grid.hline.size = 2,
+          grid.vline.size = 0.5,
+          
+          X.text = round(as.matrix(table(a2015.bh$TP_ETAPA_AGREGADA_FAC, a2015.bh$NU_IDADE_REFERENCIA)), 1),
+          X.text.size = 3,
+          X.text.angle = 90,
+          
+          yt = d,
+          yt.plot.type = "scatterline",
+          yt.plot.size = 0.25,
+          yt.axis.name = "Nº de Alunos \npor Idade",
+          
+          yr = c,
+          yr.axis.name = "Nº de Alunos \npor Etapa Agregada",
+          yr.plot.type = "bar",
+          yr.plot.size = 0.15)
+
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2016       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2016.bh <- read.csv(file = "Matriculas.BH.CE.2016.csv", row.names = 1)
+#b2016.bh <- a2015.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################        NAs       ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2016.bh$TP_ETAPA_ENSINO))
+na <- a2016.bh[is.na(a2016.bh$TP_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################      Filtros     ##############################
+########################                  #############################
+######################################################################
+
+
+a2016.bh$TP_ETAPA_ENSINO_FAC <- factor(a2016.bh$TP_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+#a2016.bh$TP_ETAPA_AGREGADA_FAC <- factor(a2016.bh$TP_ETAPA_AGREGADA, 
+#                                         levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9), 
+#                                         labels = c("Ed. Infantil", "AIs Ens. Fundamental", "AFs Ens. Fundamental", "Ens. Médio Prop.", "Ens. Médio Normal", "Cur. Téc. Int.", "Ed. Profissional", "EJA Ens. Fundamental", "EJA Ens. Médio"))
+
+a2016.bh$TP_DEPENDENCIA_FAC <- factor(a2016.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+a2016.bh %>%
+        filter(NU_IDADE < 10) %>%
+        group_by(NU_IDADE) %>%
+        summarise(n())
+
+a2016.bh %>%
+        filter(NU_IDADE < 10) %>%
+        group_by(NU_IDADE, TP_ETAPA_ENSINO_FAC) %>%
+        summarise(n())
+
+a2016.bh %>%
+        group_by(TP_DEPENDENCIA_FAC) %>%
+        summarise(n())
+
+a2016.bh %>%
+        filter(TP_ETAPA_ENSINO == 2) %>%
+        group_by(TP_CATEGORIA_ESCOLA_PRIVADA) %>%
+        summarise(n(), n()/591093)
+
+b2016.bh <- a2016.bh %>% filter(TP_ETAPA_ENSINO == 1 | TP_ETAPA_ENSINO == 2)
+write.csv(b2016.bh, file = "Matriculas.EdInf.BH.CE.2016.csv")
+
+######################################################################
+########################                  #############################
+########################  Melhor Gráfico  ##############################
+########################                  #############################
+######################################################################
+
+q <- data.matrix(table(a2016.bh$TP_ETAPA_AGREGADA_FAC, a2016.bh$NU_IDADE_REFERENCIA))
+q[q == 0] <- NA
+
+c <- a2016.bh %>% group_by(TP_ETAPA_AGREGADA_FAC) %>% summarise(n())
+c <- c$'n()'
+c <- c[-10]
+
+d <- a2016.bh %>% group_by(NU_IDADE_REFERENCIA) %>% summarise(n())
+d <- d$'n()'
+
+superheat(q,
+          heat.col.scheme =  "red",
+          heat.na.col = "white",
+          grid.vline.col = "black",
+          grid.hline.col = "black",
+          bottom.label.text.angle = 90,
+          scale = FALSE,
+          
+          left.label.text.size = 4,
+          left.label.size = 0.21,
+          bottom.label.text.size = 4,
+          bottom.label.size = 0.1,
+          grid.hline.size = 2,
+          grid.vline.size = 0.5,
+          
+          X.text = round(as.matrix(table(a2016.bh$TP_ETAPA_AGREGADA_FAC, a2016.bh$NU_IDADE_REFERENCIA)), 1),
+          X.text.size = 3,
+          X.text.angle = 90,
+          
+          yt = d,
+          yt.plot.type = "scatterline",
+          yt.plot.size = 0.25,
+          yt.axis.name = "Nº de Alunos \npor Idade",
+          
+          yr = c,
+          yr.axis.name = "Nº de Alunos \npor Etapa Agregada",
+          yr.plot.type = "bar",
+          yr.plot.size = 0.15)
+
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2014       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2014.bh <- read.csv(file = "Matriculas.BH.CE.2014.csv", row.names = 1)
+#b2014.bh <- a2014.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################     2014 NAs     ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2014.bh$TP_ETAPA_ENSINO))
+na <- a2014.bh[is.na(a2014.bh$TP_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################   2014 Filtros   ##############################
+########################                  #############################
+######################################################################
+
+
+a2014.bh$TP_ETAPA_ENSINO_FAC <- factor(a2014.bh$TP_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+a2014.bh$TP_ETAPA_AGREGADA_FAC <- factor(a2014.bh$ID_ETAPA_AGREGADA_MAT, 
+                                         levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9), 
+                                         labels = c("Ed. Infantil", "AIs Ens. Fundamental", "AFs Ens. Fundamental", "Ens. Médio Prop.", "Ens. Médio Normal", "Cur. Téc. Int.", "Ed. Profissional", "EJA Ens. Fundamental", "EJA Ens. Médio"))
+
+a2014.bh$TP_DEPENDENCIA_FAC <- factor(a2014.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+b2014.bh <- a2014.bh %>% filter(ID_ETAPA_AGREGADA_MAT == 1)
+write.csv(b2014.bh, file = "Matriculas.EdInf.BH.CE.2014.csv")
+
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2013       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2013.bh <- read.csv(file = "Matriculas.BH.CE.2013.csv", row.names = 1)
+#b2014.bh <- a2014.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################     2013 NAs     ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2013.bh$FK_COD_ETAPA_ENSINO))
+na <- a2013.bh[is.na(a2013.bh$FK_COD_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################   2013 Filtros   ##############################
+########################                  #############################
+######################################################################
+
+
+a2013.bh$TP_ETAPA_ENSINO_FAC <- factor(a2013.bh$FK_COD_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+a2013.bh$TP_DEPENDENCIA_FAC <- factor(a2013.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+b2013.bh <- a2013.bh %>% filter(FK_COD_ETAPA_ENSINO == 1 | FK_COD_ETAPA_ENSINO == 2)
+write.csv(b2013.bh, file = "Matriculas.EdInf.BH.CE.2013.csv")
+
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2012       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2012.bh <- read.csv(file = "Matriculas.BH.CE.2012.csv", row.names = 1)
+#b2014.bh <- a2014.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################     2012 NAs     ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2012.bh$FK_COD_ETAPA_ENSINO))
+na <- a2012.bh[is.na(a2012.bh$FK_COD_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################   2012 Filtros   ##############################
+########################                  #############################
+######################################################################
+
+
+a2012.bh$TP_ETAPA_ENSINO_FAC <- factor(a2012.bh$FK_COD_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+a2012.bh$TP_DEPENDENCIA_FAC <- factor(a2012.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+b2012.bh <- a2012.bh %>% filter(FK_COD_ETAPA_ENSINO == 1 | FK_COD_ETAPA_ENSINO == 2)
+write.csv(b2012.bh, file = "Matriculas.EdInf.BH.CE.2012.csv")
+
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2011       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2011.bh <- read.csv(file = "Matriculas.BH.CE.2011.csv", row.names = 1)
+#b2014.bh <- a2014.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################     2011 NAs     ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2011.bh$FK_COD_ETAPA_ENSINO))
+na <- a2011.bh[is.na(a2011.bh$FK_COD_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################   2011 Filtros   ##############################
+########################                  #############################
+######################################################################
+
+
+a2011.bh$TP_ETAPA_ENSINO_FAC <- factor(a2011.bh$FK_COD_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+a2011.bh$TP_DEPENDENCIA_FAC <- factor(a2011.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+b2011.bh <- a2011.bh %>% filter(FK_COD_ETAPA_ENSINO == 1 | FK_COD_ETAPA_ENSINO == 2)
+write.csv(b2011.bh, file = "Matriculas.EdInf.BH.CE.2011.csv")
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       2010       ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2010.bh <- read.csv(file = "Matriculas.BH.CE.2010.csv", row.names = 1)
+#b2014.bh <- a2014.bh[a2016.bh$NU_IDADE < 6, ]
+
+######################################################################
+########################                  #############################
+########################     2010 NAs     ##############################
+########################                  #############################
+######################################################################
+
+
+sum(is.na(a2010.bh$FK_COD_ETAPA_ENSINO))
+na <- a2010.bh[is.na(a2010.bh$FK_COD_ETAPA_ENSINO),]
+
+
+######################################################################
+########################                  #############################
+########################   2010 Filtros   ##############################
+########################                  #############################
+######################################################################
+
+
+a2010.bh$TP_ETAPA_ENSINO_FAC <- factor(a2010.bh$FK_COD_ETAPA_ENSINO, 
+                                       levels = c(1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 41, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 68, 65, 67, 69, 70, 71, 73, 74), 
+                                       labels = c("Creche", "Pré-Escola", "1ª EF8", "2ª EF8", "3ª EF8", "4ª EF8", "5ª EF8", "6ª EF8", "7ª EF8", "8ª EF8", "1ª EF9", "2ª EF9", "3ª EF9", "4ª EF9", "5ª EF9", "6ª EF9", "7ª EF9", "8ª EF9", "9ª EF9", "1º EM", "2º EM", "3º EM", "4º EM", "EM NS", "1º CTI", "2º CTI", "3º CTI", "4º CTI", "CTI NS", "1º EM NM", "2º EM NM", "3º EM NM", "4º EM NM", "CT. Conc.", "CT. Subs.", "FIC Conc.", "EJA EF PU", "FIC I EJA Médio", "EJA EF AI", "EJA EF AF", "EJA EM", "FIC Int. EJA EF", "CT Int. EJA"))
+
+a2010.bh$TP_DEPENDENCIA_FAC <- factor(a2010.bh$TP_DEPENDENCIA,
+                                      levels = c(1, 2, 3, 4),
+                                      labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+b2010.bh <- a2010.bh %>% filter(FK_COD_ETAPA_ENSINO == 1 | FK_COD_ETAPA_ENSINO == 2)
+
+write.csv(b2010.bh, file = "Matriculas.EdInf.BH.CE.2010.csv")
+
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################       TRETA      ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+a2010.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2010.csv", row.names = 1)
+a2011.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2011.csv", row.names = 1)
+a2012.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2012.csv", row.names = 1)
+a2013.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2013.csv", row.names = 1)
+a2014.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2014.csv", row.names = 1)
+a2015.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2015.csv", row.names = 1)
+a2016.bh <- read.csv(file = "Matriculas.EdInf.BH.CE.2016.csv", row.names = 1)
+
+b2010.bh <- a2010.bh %>% select(ANO_CENSO,    PK_COD_MATRICULA, FK_COD_ALUNO,     NU_DIA, NU_MES, NU_ANO, NUM_IDADE, TP_SEXO, TP_COR_RACA, FK_COD_ETAPA_ENSINO, ID_DEPENDENCIA_ADM_ESC, DESC_CATA_ESCOLA_PRIV,       ID_CONVENIADA_PP_ESC, ID_TIPO_CONVENIO_PODER_PUBLICO)
+b2011.bh <- a2011.bh %>% select(ANO_CENSO,    PK_COD_MATRICULA, FK_COD_ALUNO,     NU_DIA, NU_MES, NU_ANO, NUM_IDADE, TP_SEXO, TP_COR_RACA, FK_COD_ETAPA_ENSINO, ID_DEPENDENCIA_ADM_ESC, DESC_CATA_ESCOLA_PRIV,       ID_CONVENIADA_PP_ESC, ID_TIPO_CONVENIO_PODER_PUBLICO)
+b2012.bh <- a2012.bh %>% select(ANO_CENSO,    PK_COD_MATRICULA, FK_COD_ALUNO,     NU_DIA, NU_MES, NU_ANO, NUM_IDADE, TP_SEXO, TP_COR_RACA, FK_COD_ETAPA_ENSINO, ID_DEPENDENCIA_ADM_ESC, DESC_CATA_ESCOLA_PRIV,       ID_CONVENIADA_PP_ESC, ID_TIPO_CONVENIO_PODER_PUBLICO)
+b2013.bh <- a2013.bh %>% select(ANO_CENSO,    PK_COD_MATRICULA, FK_COD_ALUNO,     NU_DIA, NU_MES, NU_ANO, NUM_IDADE, TP_SEXO, TP_COR_RACA, FK_COD_ETAPA_ENSINO, ID_DEPENDENCIA_ADM_ESC, DESC_CATA_ESCOLA_PRIV,       ID_CONVENIADA_PP_ESC, ID_TIPO_CONVENIO_PODER_PUBLICO)
+b2014.bh <- a2014.bh %>% select(ANO_CENSO,    PK_COD_MATRICULA, FK_COD_ALUNO,     NU_DIA, NU_MES, NU_ANO, NUM_IDADE, TP_SEXO, TP_COR_RACA, FK_COD_ETAPA_ENSINO, ID_DEPENDENCIA_ADM_ESC, DESC_CATA_ESCOLA_PRIV,       ID_CONVENIADA_PP_ESC, ID_TIPO_CONVENIO_PODER_PUBLICO)
+b2015.bh <- a2015.bh %>% select(NU_ANO_CENSO, ID_MATRICULA,     CO_PESSOA_FISICA, NU_DIA, NU_MES, NU_ANO, NU_IDADE,  TP_SEXO, TP_COR_RACA, TP_ETAPA_ENSINO,     TP_DEPENDENCIA,         TP_CATEGORIA_ESCOLA_PRIVADA, IN_CONVENIADA_PP,     TP_CONVENIO_PODER_PUBLICO)
+b2016.bh <- a2016.bh %>% select(NU_ANO_CENSO, ID_MATRICULA,     CO_PESSOA_FISICA, NU_DIA, NU_MES, NU_ANO, NU_IDADE,  TP_SEXO, TP_COR_RACA, TP_ETAPA_ENSINO,     TP_DEPENDENCIA,         TP_CATEGORIA_ESCOLA_PRIVADA, IN_CONVENIADA_PP,     TP_CONVENIO_PODER_PUBLICO)
+
+colnames(b2010.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+colnames(b2011.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+colnames(b2012.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+colnames(b2013.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+colnames(b2014.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+colnames(b2015.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+colnames(b2016.bh) <- c("Ano_Censo", "Matricula", "Id_Inep", "Dia", "Mes", "Ano", "Idade", "Sexo", "Cor", "Etapa_Ensino", "Dependencia_Administrativa", "Categoria_Privada", "Conveniada", "Conveniada_PP")
+
+b2014.bh$Sexo <- as.character(b2014.bh$Sexo); b2015.bh$Sexo <- as.character(b2015.bh$Sexo); b2016.bh$Sexo <- as.character(b2016.bh$Sexo)
+
+b2014.bh$Sexo <- gsub("1", "M", b2014.bh$Sexo); b2014.bh$Sexo <- gsub("2", "F", b2014.bh$Sexo)
+b2015.bh$Sexo <- gsub("1", "M", b2015.bh$Sexo); b2015.bh$Sexo <- gsub("2", "F", b2015.bh$Sexo)
+b2016.bh$Sexo <- gsub("1", "M", b2016.bh$Sexo); b2016.bh$Sexo <- gsub("2", "F", b2016.bh$Sexo)
+
+a.EdInf.bh <- rbind(b2010.bh, b2011.bh, b2012.bh, b2013.bh, b2014.bh, b2015.bh, b2016.bh)
+
+write.csv(a.EdInf.bh, "EdInf.bh.2010.2016.csv")
+
+####################################################################################################
+######################################################################################################
+########################################################################################################
+########################################################                  ################################
+########################################################   2010 - 2016    ##################################
+########################################################                  ################################
+########################################################################################################
+######################################################################################################
+####################################################################################################
+
+setwd("D:/Users/joao.medeiros/Documents/Censo Escolar")
+
+a <- read.csv("EdInf.bh.2010.2016.csv", row.names = 1)
+
+a$Etapa_Ensino <- factor(a$Etapa_Ensino, 
+                         levels = c(1, 2), 
+                         labels = c("Creche", "Pré-escola"))
+
+a$Ano_Censo <- factor(a$Ano_Censo)
+
+a$Idade <- factor(a$Idade)
+
+a$Cor <- factor(a$Cor, 
+                levels = c(0, 1, 2, 3, 4, 5),
+                labels = c("Não Declarada", "Branca", "Preta", "Parda", "Amarela", "Indígena"))
+
+a$Dependencia_Administrativa <- factor(a$Dependencia_Administrativa,
+                                       levels = c(1, 2, 3, 4),
+                                       labels = c("Federal", "Estadual", "Municipal", "Privada"))
+
+a$Categoria_Privada <- factor(a$Categoria_Privada,
+                              levels = c(1, 2, 3, 4),
+                              labels = c("Particular", "Comunitária", "Confessional", "Filantrópica"))
+
+a$Conveniada_PP <- factor(a$Conveniada_PP,
+                          levels = c(1, 2, 3),
+                          labels = c("Municipal", "Estadual", "Estadual e Municipal"))
+
+a %>% group_by(Ano_Censo, Etapa_Ensino) %>% summarise(n())
+
+ggplot(a, aes(x = Ano_Censo, fill = Etapa_Ensino)) +
+        geom_histogram(stat = "count")
+
+ggplot(a, aes(x = Ano_Censo, y = ..count.., fill = Etapa_Ensino)) +
+        geom_bar(position = "dodge") +
+        theme_CFAMGBH
